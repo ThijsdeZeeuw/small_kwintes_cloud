@@ -43,7 +43,8 @@ cat ~/.ssh/file.pub | clip
 # Display and copy your public key
 
 # Copy the output (starts with ssh-rsa)
-
+```
+```bash
 # After adding to GitHub (Settings > SSH and GPG keys), test the connection:
 ssh -T git@github.com
 # Type 'yes' if prompted about host authenticity
@@ -56,7 +57,8 @@ ssh -T git@github.com
 # 5. Add a descriptive title (e.g., "VPS Server Key")
 # 6. Paste your public key in the "Key" field
 # 7. Click "Add SSH key" and confirm with your password if prompted
-
+```
+```bash
 # Install Docker
 sudo apt install -y ca-certificates curl gnupg
 sudo install -m 0755 -d /etc/apt/keyrings
