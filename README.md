@@ -33,7 +33,7 @@ sudo apt install -y git
 
  cd small_kwintes_cloud
 
- 
+
 # Type 'yes' if prompted about host authenticity
 
 
@@ -323,12 +323,10 @@ environment:
   - MCP_OPENAI_API_KEY=YOUR_OPENAI_API_KEY
   - MCP_SERPER_API_KEY=YOUR_SERPER_API_KEY
   - MCP_WEATHER_API_KEY=YOUR_WEATHER_API_KEY
-  
+
   # Enable community nodes and webhooks
   - N8N_COMMUNITY_PACKAGES_ALLOW_TOOL_USAGE=true
-  - WEBHOOK_URL=https://n8n.kwintes.cloud/
-  - GENERIC_TIMEZONE=Europe/Amsterdam
-  - NODE_FUNCTION_ALLOW_EXTERNAL=*
+
 ```
 
 For production use, reference your .env variables:
@@ -560,3 +558,15 @@ newgrp docker
 # Restart Docker service
 sudo systemctl restart docker
 ``` 
+   # Create a virtual environment (recommended)
+   python3 -m venv docling-env
+   source docling-env/bin/activate
+   
+   # Install DocLing with UI dependencies
+   pip install "docling-serve[ui]"
+   
+   # Install additional required dependencies
+   pip install spacy
+   pip install transformers
+   pip install torch
+   python -m spacy download en_core_web_sm
