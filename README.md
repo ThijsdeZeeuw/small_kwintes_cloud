@@ -1,48 +1,28 @@
-# small_kwintes_cloud
+# Local AI Package Installation Guide for Ubuntu 24.04 VPS
 
 ## System Requirements
-- Ubuntu 24.04 LTS (All code is designed to run on a VPS with Ubuntu 24)
+- Ubuntu 24.04 LTS
 - Minimum 4GB RAM (8GB+ recommended)
 - 20GB+ free disk space
 - CPU with AVX2 support for optimal performance
-- Server IP address: 46.202.155.155
 
 ## Pre-Installation Setup
 
-### Update System & Install Required Packages
+### Update System
 ```bash
-# Update system
 sudo apt update && sudo apt upgrade -y
+```
 
-# Install essential build tools and libraries
-sudo apt install -y build-essential gcc g++ make cmake
-sudo apt install -y pkg-config libssl-dev libffi-dev libncurses5-dev zlib1g-dev
-sudo apt install -y wget curl clip geomview
-
-# Install Python dependencies
-sudo apt install -y python3 python3-dev python3-pip python3-venv python3-wheel
+### Install Required Software
+```bash
+# Install Python
+sudo apt install -y python3 python3-pip python3-venv
 
 # Install Git
 sudo apt install -y git
 
-# Install Docker dependencies
-sudo apt install -y ca-certificates gnupg
-```
-
-### Set Up SSH Keys & Install Docker
-```bash
-# Generate and add SSH Key for GitHub
-ssh-keygen -t rsa -b 4096 -C "your_github_email@example.com"
-# When prompted, press Enter to save in default location (~/.ssh/id_rsa)
-# Add a passphrase if desired (recommended for security)
-cat ~/.ssh/id_rsa.pub | clip
-# Copies the contents of the file.pub file to your clipboard
-
-# Test connection after adding the key to GitHub
-ssh -T git@github.com
-# Type 'yes' if prompted about host authenticity
-
 # Install Docker
+sudo apt install -y ca-certificates curl gnupg
 sudo install -m 0755 -d /etc/apt/keyrings
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
 sudo chmod a+r /etc/apt/keyrings/docker.gpg
@@ -66,17 +46,22 @@ newgrp docker
 
 ## Installation Steps
 
-1. **Clone the repository & Install Python Requirements**
+1. **Clone the repository**
    ```bash
-   # Clone the repository
-   git clone https://github.com/kwintes/small_kwintes_cloud.git
-   cd small_kwintes_cloud
-   
-   # Install required Python packages
-   sudo apt install docker-compose requests python-dotenv psycopg2-binary pyyaml
+  
    ```
 
-2. **Configure Firewall**
+2. **Navigate to the project directory**
+   ```bash
+   cd local-ai-packaged
+   ```
+
+3. **Create environment file**
+   ```bash
+   cp .env.example .env
+   ```
+
+4. **Configure firewall (optional but recommended)**
    ```bash
    sudo apt install -y ufw
    sudo ufw allow ssh
@@ -87,25 +72,19 @@ newgrp docker
    sudo ufw enable
    ```
 
-3. **Install MCP Server Packages (if using)**
-   ```bash
-   # Install npm if not already installed
-   sudo apt install -y nodejs npm
-   
-   # Install MCP Server packages
-   npm install -g @modelcontextprotocol/server-brave-search
-   npm install -g @modelcontextprotocol/server-openai
-   npm install -g @modelcontextprotocol/server-serper
-   npm install -g @modelcontextprotocol/server-weather
-   ```
-
-4. **Start services**
+5. **Start services**
    ```bash
    python3 start_services.py --profile cpu
    ```
+   
+   Note: If you have a GPU available, you can use:
+   ```bash
+   # For NVIDIA GPUs with proper drivers installed
+   python3 start_services.py --profile cuda
+   ```
 
-5. **Open n8n workflow**
-   - Navigate to `http://46.202.155.155:5678` in your browser
+6. **Open n8n workflow**
+   - Navigate to `http://YOUR_SERVER_IP:5678` in your browser
 
 ## Configuration
 
@@ -134,12 +113,12 @@ systemctl --user start ollama
 ### Set Up WebUI
 
 1. **Access WebUI**
-   - Open `http://46.202.155.155:3000/` in your browser
+   - Open `http://YOUR_SERVER_IP:3000/` in your browser
 
 2. **Configure Workspace Functions**
    - Go to Admin Settings -> Workspace -> Functions -> Add Function
    - Give it a name and description
-   - URL: `http://46.202.155.155:3000/admin/functions`
+   - URL: `http://YOUR_SERVER_IP:3000/admin/functions`
 
 3. **Add n8n_pip Code**
    - Copy code from [https://openwebui.com/f/coleam/n8n_pipe](https://openwebui.com/f/coleam/n8n_pipe)
@@ -148,23 +127,6 @@ systemctl --user start ollama
 
 4. **Add Tools**
    - Example: Add Wikipedia Tool
-
-### Example n8n Workflows
-
-#### Telegram Photo Receiver Workflow
-
-Here's a simple workflow example to receive photos from Telegram:
-
-1. In n8n (http://46.202.155.155:5678), create a new workflow
-2. Add a Telegram node
-3. Configure it with the following settings:
-   - Resource: File
-   - Operation: Get
-   - File ID: `{{ $json.message.photo[3].file_id }}`
-4. Configure your Telegram API credentials
-5. Save and activate the workflow with "Active" toggle
-
-For advanced users, you can import this configuration directly using the Import from JSON option.
 
 ## Integrating DocLing (Optional)
 
@@ -187,24 +149,13 @@ DocLing is a computational linguistics platform that can be integrated with your
    ```
 
 3. **Access the DocLing UI**
-   - Navigate to `http://46.202.155.155:5001` in your browser
+   - Navigate to `http://YOUR_SERVER_IP:5001` in your browser
 
 #### Option 2: Direct Python Installation
 
 1. **Install the Python package with UI dependencies**
    ```bash
-   # Create a virtual environment (recommended)
-   python3 -m venv docling-env
-   source docling-env/bin/activate
-   
-   # Install DocLing with UI dependencies
    pip install "docling-serve[ui]"
-   
-   # Install additional required dependencies
-   pip install spacy
-   pip install transformers
-   pip install torch
-   python -m spacy download en_core_web_sm
    ```
 
 2. **Run DocLing with UI enabled**
@@ -216,15 +167,17 @@ DocLing is a computational linguistics platform that can be integrated with your
 
 You can add DocLing to your existing docker-compose.yml file to have it start with your other services:
 
-```
-# DocLing service in docker-compose.yml
-docling:
-  image: quay.io/docling-project/docling-serve-cpu
-  ports:
-    - "5001:5001"  # Access at http://46.202.155.155:5001
-  environment:
-    - DOCLING_SERVE_ENABLE_UI=true
-  restart: unless-stopped
+```yaml
+services:
+  # ... existing services
+  
+  docling:
+    image: quay.io/docling-project/docling-serve-cpu
+    ports:
+      - "5001:5001"
+    environment:
+      - DOCLING_SERVE_ENABLE_UI=true
+    restart: unless-stopped
 ```
 
 ### Integrating DocLing with n8n
@@ -234,7 +187,13 @@ You can create workflows in n8n that utilize DocLing's NLP capabilities:
 1. **Add an HTTP Request node in n8n**
    - Method: POST
    - URL: `http://docling:5001/api/analyze`
-   - Body: Use the following JSON structure: `{"text": "Your text here", "tasks": ["pos", "ner", "sentiment"]}`
+   - Body: 
+     ```json
+     {
+       "text": "{{$node['Previous Node'].data.text}}",
+       "tasks": ["pos", "ner", "sentiment"]
+     }
+     ```
 
 2. **Process the results in subsequent nodes**
    - Parse the linguistic analysis results
@@ -258,23 +217,7 @@ Archon is an AI orchestration framework that can be integrated with Local AI Pac
    cd archon
    ```
 
-2. **Install Python dependencies (if not using Docker)**
-   ```bash
-   # Create a virtual environment (recommended)
-   python3 -m venv archon-env
-   source archon-env/bin/activate
-   
-   # Install required dependencies
-   pip install -r requirements.txt
-   
-   # Install additional dependencies for local development
-   pip install streamlit
-   pip install langchain
-   pip install supabase
-   pip install openai
-   ```
-
-3. **Setup with Docker (Recommended)**
+2. **Setup with Docker (Recommended)**
    ```bash
    # This will build both containers and start Archon
    python3 run_docker.py
@@ -286,10 +229,10 @@ Archon is an AI orchestration framework that can be integrated with Local AI Pac
    - Runs Archon with appropriate port mappings
    - Uses environment variables from .env file if it exists
 
-4. **Access Archon UI**
-   - Navigate to `http://46.202.155.155:8501` in your browser
+3. **Access Archon UI**
+   - Navigate to `http://YOUR_SERVER_IP:8501` in your browser
 
-5. **Integration with Local AI Package**
+4. **Integration with Local AI Package**
    - In your Archon configuration, you can point to the Local AI Package's services:
      - For vector databases, use Qdrant at `http://localhost:6333`
      - For local LLMs, use Ollama at `http://localhost:11434`
@@ -300,42 +243,30 @@ When using Model Context Protocol (MCP) servers with n8n in Docker deployments, 
 
 ### Configuring MCP Environment Variables
 
-Environment variables for MCP servers should be prefixed with `MCP_` in your docker-compose.yml file:
+Environment variables for MCP servers should be prefixed with `MCP_` in your docker-compose file:
 
-For example:
-```
-# In docker-compose.yml
-environment:
-  - MCP_BRAVE_API_KEY=YOUR_BRAVE_API_KEY
-  - MCP_OPENAI_API_KEY=YOUR_OPENAI_API_KEY
-  - MCP_SERPER_API_KEY=YOUR_SERPER_API_KEY
-  - MCP_WEATHER_API_KEY=YOUR_WEATHER_API_KEY
+```yaml
+version: '3'
 
-  # Enable community nodes and webhooks
-  - N8N_COMMUNITY_PACKAGES_ALLOW_TOOL_USAGE=true
-```
-
-For production use, reference your .env variables:
-
-```
-# In your .env file
-BRAVE_API_KEY=your-actual-key
-OPENAI_API_KEY=your-actual-key
-SERPER_API_KEY=your-actual-key
-WEATHER_API_KEY=your-actual-key
-TZ=Europe/Amsterdam
+services:
+  n8n:
+    image: n8nio/n8n
+    environment:
+      # MCP server environment variables
+      - MCP_BRAVE_API_KEY=your-brave-api-key
+      - MCP_OPENAI_API_KEY=your-openai-key
+      - MCP_SERPER_API_KEY=your-serper-key
+      - MCP_WEATHER_API_KEY=your-weather-api-key
+      
+      # Enable community nodes as tools
+      - N8N_COMMUNITY_PACKAGES_ALLOW_TOOL_USAGE=true
+    ports:
+      - "5678:5678"
+    volumes:
+      - ~/.n8n:/home/node/.n8n
 ```
 
-### Enabling Webhooks in n8n
-
-For workflows that rely on webhooks (like the Telegram example above), you need to ensure webhooks are properly configured in n8n. The `WEBHOOK_URL` environment variable is crucial as it tells n8n how to construct webhook URLs. Without this configuration, webhooks might not work correctly.
-
-Adding these environment variables to your docker-compose.yml file enables proper webhook functionality:
-- `WEBHOOK_URL`: Sets the base URL for webhooks
-- `GENERIC_TIMEZONE`: Sets the timezone for scheduled tasks
-- `NODE_FUNCTION_ALLOW_EXTERNAL`: Allows executing functions from external modules
-
-If you're experiencing issues with webhooks, ensure these variables are correctly set in your docker-compose.yml file.
+These environment variables will be automatically passed to your MCP servers when they are executed.
 
 ### Setting Up MCP Servers
 
@@ -383,45 +314,7 @@ If you're experiencing issues with webhooks, ensure these variables are correctl
    - Add another MCP Client node
    - Select "Execute Tool" operation
    - Choose the "brave_search" tool
-   - Set Parameters to: 'latest AI news'
-
-### Setting Up Telegram Triggers with Public Base URL
-
-For Telegram triggers to work properly, n8n needs a public HTTPS URL that Telegram servers can reach. This is because Telegram's API requires webhook URLs to be accessible from the internet and secured with HTTPS.
-
-#### Why a Public Base URL is Needed
-
-- **Localhost isn't reachable**: Telegram servers cannot reach your local n8n instance at `http://localhost:5678`
-- **Telegram requires HTTPS**: Webhook URLs must use HTTPS with valid certificates
-- **Proper webhook registration**: Without the correct base URL, n8n registers incorrect callback URLs with Telegram
-
-#### Configuring n8n with Public Base URL
-
-Add these environment variables to your docker-compose.yml file:
-
-```
-# Webhook configuration in docker-compose.yml
-environment:
-  - N8N_PROTOCOL=http
-  - N8N_PORT=5678
-  - WEBHOOK_URL=https://n8n.kwintes.cloud/
-  - GENERIC_TIMEZONE=Europe/Amsterdam
-  - NODE_FUNCTION_ALLOW_EXTERNAL=*
-```
-
-With these settings, n8n will generate webhook URLs starting with your public domain (e.g., `https://n8n.kwintes.cloud/webhook/...`) instead of localhost.
-
-#### Verifying Webhook Setup
-
-1. In the n8n Editor UI, add a Telegram Trigger node
-2. Check the "Webhook URL" it displays - it should show your public URL
-3. Activate the workflow, and n8n will register this URL with Telegram's API
-4. Test by sending a message to your Telegram bot
-
-If you encounter webhook issues, verify that:
-- Your domain has valid HTTPS certificates
-- Traffic is properly forwarded to your n8n instance
-- Firewalls allow incoming connections on the appropriate ports
+   - Set Parameters to: `{"query": "latest AI news"}`
 
 ### Using Local MCP Server with SSE
 
@@ -429,7 +322,7 @@ If you're running a local MCP server that supports Server-Sent Events (SSE):
 
 1. Start the local MCP server:
    ```bash
-   npx '@modelcontextprotocol/server-example-sse'
+   npx @modelcontextprotocol/server-example-sse
    ```
 
 2. Configure MCP Client credentials in n8n:
@@ -446,9 +339,10 @@ To use MCP clients as tools in AI Agent nodes, set the environment variable:
 export N8N_COMMUNITY_PACKAGES_ALLOW_TOOL_USAGE=true
 ```
 
-Or in Docker environment:
-```
-N8N_COMMUNITY_PACKAGES_ALLOW_TOOL_USAGE=true
+In Docker, add this to your environment configuration:
+```yaml
+environment:
+  - N8N_COMMUNITY_PACKAGES_ALLOW_TOOL_USAGE=true
 ```
 
 ## Running as a Service (Optional)
@@ -460,7 +354,6 @@ sudo nano /etc/systemd/system/localai.service
 
 Add the following content:
 ```
-# /etc/systemd/system/localai.service
 [Unit]
 Description=Local AI Package
 After=docker.service
@@ -469,7 +362,7 @@ Requires=docker.service
 [Service]
 Type=simple
 User=YOUR_USERNAME
-WorkingDirectory=/path/to/small_kwintes_cloud
+WorkingDirectory=/path/to/local-ai-packaged
 ExecStart=/usr/bin/python3 start_services.py --profile cpu
 Restart=on-failure
 RestartSec=10
@@ -504,41 +397,3 @@ python3 start_services.py --profile <your-profile>
 - Visit the [Community Forum](https://thinktank.ottomator.ai/c/local-ai/18)
 - Check service logs: `docker compose -p localai logs`
 - Check system resources: `htop` (install with `sudo apt install htop` if needed) 
-
-### Python Dependency Issues
-
-If you encounter issues with Python dependencies:
-
-```bash
-# Upgrade pip to the latest version
-python3 -m pip install --upgrade pip
-
-# If you have issues with the cryptography package
-sudo apt-get install -y libssl-dev rustc cargo
-pip install --upgrade cryptography
-
-# If you have issues with building wheels
-pip install --upgrade setuptools wheel
-
-# For issues with psycopg2 installation
-sudo apt-get install -y libpq-dev
-pip install psycopg2-binary
-
-# Clear pip cache if you're having persistent issues
-pip cache purge
-```
-
-### Docker-related Issues
-
-If you encounter Docker permission issues:
-
-```bash
-# Make sure your user is added to the docker group
-sudo usermod -aG docker $USER
-
-# Apply the changes without logging out
-newgrp docker
-
-# Restart Docker service
-sudo systemctl restart docker
-``` 
