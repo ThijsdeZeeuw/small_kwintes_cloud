@@ -9,38 +9,40 @@
 
 ## Pre-Installation Setup
 
-### Update System
+### Update System & Install Required Packages
 ```bash
+# Update system
 sudo apt update && sudo apt upgrade -y
 
-### Install Required System Packages
 # Install essential build tools and libraries
 sudo apt install -y build-essential gcc g++ make cmake
 sudo apt install -y pkg-config libssl-dev libffi-dev libncurses5-dev zlib1g-dev
 sudo apt install -y wget curl clip geomview
 
-# Install Python dependencies for cryptography and pip
-sudo apt install -y python3-dev python3-pip python3-venv python3-wheel
-```
-
-### Install Required Software
-
-# Install Python
-sudo apt install -y python3 python3-pip python3-venv
+# Install Python dependencies
+sudo apt install -y python3 python3-dev python3-pip python3-venv python3-wheel
 
 # Install Git
 sudo apt install -y git
 
- cd small_kwintes_cloud
+# Install Docker dependencies
+sudo apt install -y ca-certificates gnupg
+```
 
+### Set Up SSH Keys & Install Docker
+```bash
+# Generate and add SSH Key for GitHub
+ssh-keygen -t rsa -b 4096 -C "your_github_email@example.com"
+# When prompted, press Enter to save in default location (~/.ssh/id_rsa)
+# Add a passphrase if desired (recommended for security)
+cat ~/.ssh/id_rsa.pub | clip
+# Copies the contents of the file.pub file to your clipboard
 
+# Test connection after adding the key to GitHub
+ssh -T git@github.com
 # Type 'yes' if prompted about host authenticity
 
-
-```
-```bash
 # Install Docker
-sudo apt install -y ca-certificates curl gnupg
 sudo install -m 0755 -d /etc/apt/keyrings
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
 sudo chmod a+r /etc/apt/keyrings/docker.gpg
@@ -56,9 +58,6 @@ sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin d
 # Add current user to docker group
 sudo usermod -aG docker $USER
 newgrp docker
-
-git clone https://github.com/ThijsdeZeeuw/small_kwintes_cloud.git
-
 ```
 
 ### Helpful Resources
@@ -67,19 +66,18 @@ git clone https://github.com/ThijsdeZeeuw/small_kwintes_cloud.git
 
 ## Installation Steps
 
-1. **Install Required Python Packages**
+1. **Clone the repository & Install Python Requirements**
    ```bash
+   # Clone the repository
+   git clone https://github.com/kwintes/small_kwintes_cloud.git
+   cd small_kwintes_cloud
+   
    # Install required Python packages
-   sudo apt install docker-compose
-   sudo apt install requests
-   sudo apt install python-dotenv
-   sudo apt install psycopg2-binary
-   sudo apt install pyyaml
-
+   sudo apt install docker-compose requests python-dotenv psycopg2-binary pyyaml
    ```
 
-2. **Create environment file** 
-     ```bash
+2. **Configure Firewall**
+   ```bash
    sudo apt install -y ufw
    sudo ufw allow ssh
    sudo ufw allow 3000  # WebUI
@@ -91,8 +89,6 @@ git clone https://github.com/ThijsdeZeeuw/small_kwintes_cloud.git
 
 3. **Install MCP Server Packages (if using)**
    ```bash
-
-
    # Install npm if not already installed
    sudo apt install -y nodejs npm
    
@@ -103,21 +99,12 @@ git clone https://github.com/ThijsdeZeeuw/small_kwintes_cloud.git
    npm install -g @modelcontextprotocol/server-weather
    ```
 
-6. **Configure firewall (optional but recommended)**
-
-
-7. **Start services**
+4. **Start services**
    ```bash
-
-
-   
    python3 start_services.py --profile cpu
-
-
-
    ```
 
-8. **Open n8n workflow**
+5. **Open n8n workflow**
    - Navigate to `http://46.202.155.155:5678` in your browser
 
 ## Configuration
@@ -326,19 +313,16 @@ environment:
 
   # Enable community nodes and webhooks
   - N8N_COMMUNITY_PACKAGES_ALLOW_TOOL_USAGE=true
-
 ```
 
 For production use, reference your .env variables:
 
-```text
+```
 # In your .env file
 BRAVE_API_KEY=your-actual-key
 OPENAI_API_KEY=your-actual-key
 SERPER_API_KEY=your-actual-key
 WEATHER_API_KEY=your-actual-key
-SUBDOMAIN=n8n
-DOMAIN_NAME=kwintes.cloud
 TZ=Europe/Amsterdam
 ```
 
@@ -399,7 +383,7 @@ If you're experiencing issues with webhooks, ensure these variables are correctl
    - Add another MCP Client node
    - Select "Execute Tool" operation
    - Choose the "brave_search" tool
-   - Set Parameters to: `{"query": "latest AI news"}`
+   - Set Parameters to: 'latest AI news'
 
 ### Setting Up Telegram Triggers with Public Base URL
 
@@ -525,7 +509,7 @@ python3 start_services.py --profile <your-profile>
 
 If you encounter issues with Python dependencies:
 
-```text
+```bash
 # Upgrade pip to the latest version
 python3 -m pip install --upgrade pip
 
@@ -558,15 +542,3 @@ newgrp docker
 # Restart Docker service
 sudo systemctl restart docker
 ``` 
-   # Create a virtual environment (recommended)
-   python3 -m venv docling-env
-   source docling-env/bin/activate
-   
-   # Install DocLing with UI dependencies
-   pip install "docling-serve[ui]"
-   
-   # Install additional required dependencies
-   pip install spacy
-   pip install transformers
-   pip install torch
-   python -m spacy download en_core_web_sm
