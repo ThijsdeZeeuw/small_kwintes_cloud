@@ -12,10 +12,8 @@
 ### Update System
 ```bash
 sudo apt update && sudo apt upgrade -y
-```
 
 ### Install Required System Packages
-```bash
 # Install essential build tools and libraries
 sudo apt install -y build-essential gcc g++ make cmake
 sudo apt install -y pkg-config libssl-dev libffi-dev libncurses5-dev zlib1g-dev
@@ -26,37 +24,17 @@ sudo apt install -y python3-dev python3-pip python3-venv python3-wheel
 ```
 
 ### Install Required Software
-```bash
+
 # Install Python
 sudo apt install -y python3 python3-pip python3-venv
 
 # Install Git
 sudo apt install -y git
-```
-```bash
-# Generate and add SSH Key for GitHub
-ssh-keygen -t rsa -b 4096 -C "tddezeeuw@gmail.com"
-# When prompted, press Enter to save in default location (~/.ssh/id_rsa)
-# Add a passphrase if desired (recommended for security)
-cat ~/.ssh/id_rsa.pub | clip
-# Copies the contents of the file.pub file to your clipboard
-# Display and copy your public key
 
-# Copy the output (starts with ssh-rsa)
-```
-```bash
-# After adding to GitHub (Settings > SSH and GPG keys), test the connection:
-ssh -T git@github.com
+
 # Type 'yes' if prompted about host authenticity
 
-# To add the key to GitHub:
-# 1. Log in to your GitHub account
-# 2. Go to Settings (click your profile picture → Settings)
-# 3. Select SSH and GPG keys from the sidebar
-# 4. Click "New SSH key" or "Add SSH key"
-# 5. Add a descriptive title (e.g., "VPS Server Key")
-# 6. Paste your public key in the "Key" field
-# 7. Click "Add SSH key" and confirm with your password if prompted
+
 ```
 ```bash
 # Install Docker
@@ -76,6 +54,9 @@ sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin d
 # Add current user to docker group
 sudo usermod -aG docker $USER
 newgrp docker
+
+
+
 ```
 
 ### Helpful Resources
@@ -97,18 +78,26 @@ newgrp docker
 
 2. **Clone the repository**
    ```bash
-   cat ~/.ssh/id_rsa.pub
+
   
    git clone https://github.com/ThijsdeZeeuw/small_kwintes_cloud.git
    ```
 
 3. **Navigate to the project directory**
-   ```bash
+
    cd small_kwintes_cloud
    ```
 
 4. **Create environment file** 
-  
+     ```bash
+   sudo apt install -y ufw
+   sudo ufw allow ssh
+   sudo ufw allow 3000  # WebUI
+   sudo ufw allow 5678  # n8n workflow
+   sudo ufw allow 8501  # Archon Streamlit UI (if using Archon)
+   sudo ufw allow 5001  # DocLing Serve (if using DocLing)
+   sudo ufw enable
+   ```
 
 5. **Install MCP Server Packages (if using)**
    ```bash
@@ -123,19 +112,17 @@ newgrp docker
    ```
 
 6. **Configure firewall (optional but recommended)**
-   ```bash
-   sudo apt install -y ufw
-   sudo ufw allow ssh
-   sudo ufw allow 3000  # WebUI
-   sudo ufw allow 5678  # n8n workflow
-   sudo ufw allow 8501  # Archon Streamlit UI (if using Archon)
-   sudo ufw allow 5001  # DocLing Serve (if using DocLing)
-   sudo ufw enable
-   ```
+
 
 7. **Start services**
    ```bash
+
+
+   
    python3 start_services.py --profile cpu
+
+
+
    ```
 
 8. **Open n8n workflow**
