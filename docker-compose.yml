@@ -20,6 +20,7 @@ x-n8n: &service-n8n
     - N8N_PERSONALIZATION_ENABLED=false
     - N8N_ENCRYPTION_KEY
     - N8N_USER_MANAGEMENT_JWT_SECRET
+    
 
 x-ollama: &service-ollama
   image: ollama/ollama:latest
@@ -86,10 +87,6 @@ services:
     restart: unless-stopped
     ports:
       - 5678:5678
-    environment:
-      - WEBHOOK_URL=https://${SUBDOMAIN}.${DOMAIN_NAME}/
-      - GENERIC_TIMEZONE=${TZ}
-      - NODE_FUNCTION_ALLOW_EXTERNAL=*
     volumes:
       - n8n_storage:/home/node/.n8n
       - ./n8n/backup:/backup

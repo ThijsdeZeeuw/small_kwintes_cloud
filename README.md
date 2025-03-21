@@ -31,7 +31,9 @@ sudo apt install -y python3 python3-pip python3-venv
 # Install Git
 sudo apt install -y git
 
+ cd small_kwintes_cloud
 
+ 
 # Type 'yes' if prompted about host authenticity
 
 
@@ -55,7 +57,7 @@ sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin d
 sudo usermod -aG docker $USER
 newgrp docker
 
-
+git clone https://github.com/ThijsdeZeeuw/small_kwintes_cloud.git
 
 ```
 
@@ -76,19 +78,7 @@ newgrp docker
 
    ```
 
-2. **Clone the repository**
-   ```bash
-
-  
-   git clone https://github.com/ThijsdeZeeuw/small_kwintes_cloud.git
-   ```
-
-3. **Navigate to the project directory**
-
-   cd small_kwintes_cloud
-   ```
-
-4. **Create environment file** 
+2. **Create environment file** 
      ```bash
    sudo apt install -y ufw
    sudo ufw allow ssh
@@ -99,8 +89,10 @@ newgrp docker
    sudo ufw enable
    ```
 
-5. **Install MCP Server Packages (if using)**
+3. **Install MCP Server Packages (if using)**
    ```bash
+
+
    # Install npm if not already installed
    sudo apt install -y nodejs npm
    
@@ -176,48 +168,16 @@ systemctl --user start ollama
 
 Here's a simple workflow example to receive photos from Telegram:
 
-```json
-{
-  "nodes": [
-    {
-      "parameters": {
-        "resource": "file",
-        "fileId": "{{ $json.message.photo[3].file_id }}"
-      },
-      "id": "2566ed69-02cb-467e-a7d9-6a48f52fe19d",
-      "name": "Receive the File",
-      "type": "n8n-nodes-base.telegram",
-      "position": [
-        -260,
-        1000
-      ],
-      "typeVersion": 1.2,
-      "webhookId": "5cfd9c36-1b0e-4c47-be02-b318f6b671d9",
-      "credentials": {
-        "telegramApi": {
-          "id": "KkcIfmAEmhHw1Pir",
-          "name": "Telegram account"
-        }
-      },
-      "onError": "continueRegularOutput"
-    }
-  ],
-  "connections": {
-    "Receive the File": {
-      "main": [
-        []
-      ]
-    }
-  }
-}
-```
-
-To use this workflow:
 1. In n8n (http://46.202.155.155:5678), create a new workflow
-2. Click on the canvas and select "Import from JSON"
-3. Paste the above JSON code
+2. Add a Telegram node
+3. Configure it with the following settings:
+   - Resource: File
+   - Operation: Get
+   - File ID: `{{ $json.message.photo[3].file_id }}`
 4. Configure your Telegram API credentials
 5. Save and activate the workflow with "Active" toggle
+
+For advanced users, you can import this configuration directly using the Import from JSON option.
 
 ## Integrating DocLing (Optional)
 
@@ -269,17 +229,15 @@ DocLing is a computational linguistics platform that can be integrated with your
 
 You can add DocLing to your existing docker-compose.yml file to have it start with your other services:
 
-```text
-services:
-  # ... existing services
-  
-  docling:
-    image: quay.io/docling-project/docling-serve-cpu
-    ports:
-      - "5001:5001"  # Access at http://46.202.155.155:5001
-    environment:
-      - DOCLING_SERVE_ENABLE_UI=true
-    restart: unless-stopped
+```
+# DocLing service in docker-compose.yml
+docling:
+  image: quay.io/docling-project/docling-serve-cpu
+  ports:
+    - "5001:5001"  # Access at http://46.202.155.155:5001
+  environment:
+    - DOCLING_SERVE_ENABLE_UI=true
+  restart: unless-stopped
 ```
 
 ### Integrating DocLing with n8n
@@ -289,13 +247,7 @@ You can create workflows in n8n that utilize DocLing's NLP capabilities:
 1. **Add an HTTP Request node in n8n**
    - Method: POST
    - URL: `http://docling:5001/api/analyze`
-   - Body: 
-     ```json
-     {
-       "text": "{{$node['Previous Node'].data.text}}",
-       "tasks": ["pos", "ner", "sentiment"]
-     }
-     ```
+   - Body: Use the following JSON structure: `{"text": "Your text here", "tasks": ["pos", "ner", "sentiment"]}`
 
 2. **Process the results in subsequent nodes**
    - Parse the linguistic analysis results
@@ -363,30 +315,20 @@ When using Model Context Protocol (MCP) servers with n8n in Docker deployments, 
 
 Environment variables for MCP servers should be prefixed with `MCP_` in your docker-compose.yml file:
 
-```text
-version: '3'
-
-services:
-  n8n:
-    image: n8nio/n8n
-    environment:
-      # MCP server environment variables
-      - MCP_BRAVE_API_KEY=YOUR_BRAVE_API_KEY
-      - MCP_OPENAI_API_KEY=YOUR_OPENAI_API_KEY
-      - MCP_SERPER_API_KEY=YOUR_SERPER_API_KEY
-      - MCP_WEATHER_API_KEY=YOUR_WEATHER_API_KEY
-      
-      # Enable community nodes as tools
-      - N8N_COMMUNITY_PACKAGES_ALLOW_TOOL_USAGE=true
-      
-      # Enable webhooks
-      - WEBHOOK_URL=https://${SUBDOMAIN}.${DOMAIN_NAME}/
-      - GENERIC_TIMEZONE=${TZ}
-      - NODE_FUNCTION_ALLOW_EXTERNAL=*
-    ports:
-      - "5678:5678"
-    volumes:
-      - ~/.n8n:/home/node/.n8n
+For example:
+```
+# In docker-compose.yml
+environment:
+  - MCP_BRAVE_API_KEY=YOUR_BRAVE_API_KEY
+  - MCP_OPENAI_API_KEY=YOUR_OPENAI_API_KEY
+  - MCP_SERPER_API_KEY=YOUR_SERPER_API_KEY
+  - MCP_WEATHER_API_KEY=YOUR_WEATHER_API_KEY
+  
+  # Enable community nodes and webhooks
+  - N8N_COMMUNITY_PACKAGES_ALLOW_TOOL_USAGE=true
+  - WEBHOOK_URL=https://n8n.kwintes.cloud/
+  - GENERIC_TIMEZONE=Europe/Amsterdam
+  - NODE_FUNCTION_ALLOW_EXTERNAL=*
 ```
 
 For production use, reference your .env variables:
@@ -459,10 +401,7 @@ If you're experiencing issues with webhooks, ensure these variables are correctl
    - Add another MCP Client node
    - Select "Execute Tool" operation
    - Choose the "brave_search" tool
-   - Set Parameters to: 
-   ```text
-   {"query": "latest AI news"}
-   ```
+   - Set Parameters to: `{"query": "latest AI news"}`
 
 ### Setting Up Telegram Triggers with Public Base URL
 
@@ -478,27 +417,14 @@ For Telegram triggers to work properly, n8n needs a public HTTPS URL that Telegr
 
 Add these environment variables to your docker-compose.yml file:
 
-```text
-version: '3'
-
-services:
-  n8n:
-    image: n8nio/n8n
-    environment:
-      # Basic configuration
-      - N8N_PROTOCOL=http
-      - N8N_PORT=5678
-      
-      # Webhook configuration (critical for Telegram)
-      - WEBHOOK_URL=https://${SUBDOMAIN}.${DOMAIN_NAME}/
-      - GENERIC_TIMEZONE=${TZ}
-      - NODE_FUNCTION_ALLOW_EXTERNAL=*
-      
-      # Other environment variables...
-    ports:
-      - "5678:5678"
-    volumes:
-      - ~/.n8n:/home/node/.n8n
+```
+# Webhook configuration in docker-compose.yml
+environment:
+  - N8N_PROTOCOL=http
+  - N8N_PORT=5678
+  - WEBHOOK_URL=https://n8n.kwintes.cloud/
+  - GENERIC_TIMEZONE=Europe/Amsterdam
+  - NODE_FUNCTION_ALLOW_EXTERNAL=*
 ```
 
 With these settings, n8n will generate webhook URLs starting with your public domain (e.g., `https://n8n.kwintes.cloud/webhook/...`) instead of localhost.
@@ -538,10 +464,9 @@ To use MCP clients as tools in AI Agent nodes, set the environment variable:
 export N8N_COMMUNITY_PACKAGES_ALLOW_TOOL_USAGE=true
 ```
 
-In Docker, add this to your environment configuration:
-```text
-environment:
-  - N8N_COMMUNITY_PACKAGES_ALLOW_TOOL_USAGE=true
+Or in Docker environment:
+```
+N8N_COMMUNITY_PACKAGES_ALLOW_TOOL_USAGE=true
 ```
 
 ## Running as a Service (Optional)
@@ -553,6 +478,7 @@ sudo nano /etc/systemd/system/localai.service
 
 Add the following content:
 ```
+# /etc/systemd/system/localai.service
 [Unit]
 Description=Local AI Package
 After=docker.service
