@@ -32,14 +32,16 @@ sudo apt install -y python3 python3-pip python3-venv
 
 # Install Git
 sudo apt install -y git
-
+```
+```bash
 # Generate and add SSH Key for GitHub
 ssh-keygen -t rsa -b 4096 -C "tddezeeuw@gmail.com"
 # When prompted, press Enter to save in default location (~/.ssh/id_rsa)
 # Add a passphrase if desired (recommended for security)
-
+cat ~/.ssh/file.pub | clip
+# Copies the contents of the file.pub file to your clipboard
 # Display and copy your public key
-cat ~/.ssh/id_rsa.pub
+
 # Copy the output (starts with ssh-rsa)
 
 # After adding to GitHub (Settings > SSH and GPG keys), test the connection:
