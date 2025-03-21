@@ -19,7 +19,7 @@ sudo apt update && sudo apt upgrade -y
 # Install essential build tools and libraries
 sudo apt install -y build-essential gcc g++ make cmake
 sudo apt install -y pkg-config libssl-dev libffi-dev libncurses5-dev zlib1g-dev
-sudo apt install -y wget curl
+sudo apt install -y wget curl clip
 
 # Install Python dependencies for cryptography and pip
 sudo apt install -y python3-dev python3-pip python3-venv python3-wheel
@@ -38,7 +38,7 @@ sudo apt install -y git
 ssh-keygen -t rsa -b 4096 -C "tddezeeuw@gmail.com"
 # When prompted, press Enter to save in default location (~/.ssh/id_rsa)
 # Add a passphrase if desired (recommended for security)
-cat ~/.ssh/file.pub | clip
+cat ~/.ssh/id_rsa.pub | clip
 # Copies the contents of the file.pub file to your clipboard
 # Display and copy your public key
 
@@ -97,8 +97,8 @@ newgrp docker
 2. **Clone the repository**
    ```bash
    cat ~/.ssh/id_rsa.pub
-   
-   git clone git@github.com:ThijsdeZeeuw/small_kwintes_cloud.git
+  
+   git clone https://github.com/ThijsdeZeeuw/small_kwintes_cloud.git
    ```
 
 3. **Navigate to the project directory**
