@@ -83,6 +83,10 @@ services:
   n8n:
     <<: *service-n8n
     container_name: n8n
+    environment:
+      - WEBHOOK_URL=https://${SUBDOMAIN}.${DOMAIN_NAME}/
+      - GENERIC_TIMEZONE=${TZ}
+      - NODE_FUNCTION_ALLOW_EXTERNAL=*
     restart: unless-stopped
     ports:
       - 5678:5678

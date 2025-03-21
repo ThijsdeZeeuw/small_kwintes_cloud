@@ -19,7 +19,7 @@ sudo apt update && sudo apt upgrade -y
 # Install essential build tools and libraries
 sudo apt install -y build-essential gcc g++ make cmake
 sudo apt install -y pkg-config libssl-dev libffi-dev libncurses5-dev zlib1g-dev
-sudo apt install -y wget curl clip
+sudo apt install -y wget curl clip geomview
 
 # Install Python dependencies for cryptography and pip
 sudo apt install -y python3-dev python3-pip python3-venv python3-wheel
@@ -87,11 +87,12 @@ newgrp docker
 1. **Install Required Python Packages**
    ```bash
    # Install required Python packages
-   pip install docker-compose
-   pip install requests
-   pip install python-dotenv
-   pip install psycopg2-binary
-   pip install pyyaml
+   sudo apt install docker-compose
+   sudo apt install requests
+   sudo apt install python-dotenv
+   sudo apt install psycopg2-binary
+   sudo apt install pyyaml
+
    ```
 
 2. **Clone the repository**
@@ -181,6 +182,55 @@ systemctl --user start ollama
 
 4. **Add Tools**
    - Example: Add Wikipedia Tool
+
+### Example n8n Workflows
+
+#### Telegram Photo Receiver Workflow
+
+Here's a simple workflow example to receive photos from Telegram:
+
+```json
+{
+  "nodes": [
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "{{ $json.message.photo[3].file_id }}"
+      },
+      "id": "2566ed69-02cb-467e-a7d9-6a48f52fe19d",
+      "name": "Receive the File",
+      "type": "n8n-nodes-base.telegram",
+      "position": [
+        -260,
+        1000
+      ],
+      "typeVersion": 1.2,
+      "webhookId": "5cfd9c36-1b0e-4c47-be02-b318f6b671d9",
+      "credentials": {
+        "telegramApi": {
+          "id": "KkcIfmAEmhHw1Pir",
+          "name": "Telegram account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "connections": {
+    "Receive the File": {
+      "main": [
+        []
+      ]
+    }
+  }
+}
+```
+
+To use this workflow:
+1. In n8n (http://46.202.155.155:5678), create a new workflow
+2. Click on the canvas and select "Import from JSON"
+3. Paste the above JSON code
+4. Configure your Telegram API credentials
+5. Save and activate the workflow with "Active" toggle
 
 ## Integrating DocLing (Optional)
 
@@ -334,20 +384,47 @@ services:
     image: n8nio/n8n
     environment:
       # MCP server environment variables
-      - MCP_BRAVE_API_KEY=${BRAVE_API_KEY}
-      - MCP_OPENAI_API_KEY=${OPENAI_API_KEY}
-      - MCP_SERPER_API_KEY=${SERPER_API_KEY}
-      - MCP_WEATHER_API_KEY=${WEATHER_API_KEY}
+      - MCP_BRAVE_API_KEY=YOUR_BRAVE_API_KEY
+      - MCP_OPENAI_API_KEY=YOUR_OPENAI_API_KEY
+      - MCP_SERPER_API_KEY=YOUR_SERPER_API_KEY
+      - MCP_WEATHER_API_KEY=YOUR_WEATHER_API_KEY
       
       # Enable community nodes as tools
       - N8N_COMMUNITY_PACKAGES_ALLOW_TOOL_USAGE=true
+      
+      # Enable webhooks
+      - WEBHOOK_URL=https://${SUBDOMAIN}.${DOMAIN_NAME}/
+      - GENERIC_TIMEZONE=${TZ}
+      - NODE_FUNCTION_ALLOW_EXTERNAL=*
     ports:
       - "5678:5678"
     volumes:
       - ~/.n8n:/home/node/.n8n
 ```
 
-These environment variables will be automatically passed to your MCP servers when they are executed.
+For production use, reference your .env variables:
+
+```text
+# In your .env file
+BRAVE_API_KEY=your-actual-key
+OPENAI_API_KEY=your-actual-key
+SERPER_API_KEY=your-actual-key
+WEATHER_API_KEY=your-actual-key
+SUBDOMAIN=n8n
+DOMAIN_NAME=kwintes.cloud
+TZ=Europe/Amsterdam
+```
+
+### Enabling Webhooks in n8n
+
+For workflows that rely on webhooks (like the Telegram example above), you need to ensure webhooks are properly configured in n8n. The `WEBHOOK_URL` environment variable is crucial as it tells n8n how to construct webhook URLs. Without this configuration, webhooks might not work correctly.
+
+Adding these environment variables to your docker-compose.yml file enables proper webhook functionality:
+- `WEBHOOK_URL`: Sets the base URL for webhooks
+- `GENERIC_TIMEZONE`: Sets the timezone for scheduled tasks
+- `NODE_FUNCTION_ALLOW_EXTERNAL`: Allows executing functions from external modules
+
+If you're experiencing issues with webhooks, ensure these variables are correctly set in your docker-compose.yml file.
 
 ### Setting Up MCP Servers
 
@@ -396,9 +473,60 @@ These environment variables will be automatically passed to your MCP servers whe
    - Select "Execute Tool" operation
    - Choose the "brave_search" tool
    - Set Parameters to: 
-   ```json
+   ```text
    {"query": "latest AI news"}
    ```
+
+### Setting Up Telegram Triggers with Public Base URL
+
+For Telegram triggers to work properly, n8n needs a public HTTPS URL that Telegram servers can reach. This is because Telegram's API requires webhook URLs to be accessible from the internet and secured with HTTPS.
+
+#### Why a Public Base URL is Needed
+
+- **Localhost isn't reachable**: Telegram servers cannot reach your local n8n instance at `http://localhost:5678`
+- **Telegram requires HTTPS**: Webhook URLs must use HTTPS with valid certificates
+- **Proper webhook registration**: Without the correct base URL, n8n registers incorrect callback URLs with Telegram
+
+#### Configuring n8n with Public Base URL
+
+Add these environment variables to your docker-compose.yml file:
+
+```text
+version: '3'
+
+services:
+  n8n:
+    image: n8nio/n8n
+    environment:
+      # Basic configuration
+      - N8N_PROTOCOL=http
+      - N8N_PORT=5678
+      
+      # Webhook configuration (critical for Telegram)
+      - WEBHOOK_URL=https://${SUBDOMAIN}.${DOMAIN_NAME}/
+      - GENERIC_TIMEZONE=${TZ}
+      - NODE_FUNCTION_ALLOW_EXTERNAL=*
+      
+      # Other environment variables...
+    ports:
+      - "5678:5678"
+    volumes:
+      - ~/.n8n:/home/node/.n8n
+```
+
+With these settings, n8n will generate webhook URLs starting with your public domain (e.g., `https://n8n.kwintes.cloud/webhook/...`) instead of localhost.
+
+#### Verifying Webhook Setup
+
+1. In the n8n Editor UI, add a Telegram Trigger node
+2. Check the "Webhook URL" it displays - it should show your public URL
+3. Activate the workflow, and n8n will register this URL with Telegram's API
+4. Test by sending a message to your Telegram bot
+
+If you encounter webhook issues, verify that:
+- Your domain has valid HTTPS certificates
+- Traffic is properly forwarded to your n8n instance
+- Firewalls allow incoming connections on the appropriate ports
 
 ### Using Local MCP Server with SSE
 
@@ -486,7 +614,7 @@ python3 start_services.py --profile <your-profile>
 
 If you encounter issues with Python dependencies:
 
-```bash
+```text
 # Upgrade pip to the latest version
 python3 -m pip install --upgrade pip
 
