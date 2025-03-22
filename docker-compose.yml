@@ -20,6 +20,8 @@ x-n8n: &service-n8n
     - N8N_PERSONALIZATION_ENABLED=false
     - N8N_ENCRYPTION_KEY
     - N8N_USER_MANAGEMENT_JWT_SECRET
+    - WEBHOOK_TUNNEL_URL=${NGROK_URL}
+    - WEBHOOK_URL=${NGROK_URL}
     
 
 x-ollama: &service-ollama
@@ -46,6 +48,16 @@ x-init-ollama: &init-ollama
     # Change the name of the LLM and num_ctx as you see fit.
 
 services:
+  ngrok:
+    image: ngrok/ngrok:latest
+    container_name: ngrok
+    restart: unless-stopped
+    ports:
+      - 4040:4040
+    environment:
+      - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN}
+    command: http n8n:5678
+    
   flowise:
     image: flowiseai/flowise
     restart: unless-stopped
@@ -87,6 +99,7 @@ services:
     restart: unless-stopped
     ports:
       - 5678:5678
+    
     volumes:
       - n8n_storage:/home/node/.n8n
       - ./n8n/backup:/backup

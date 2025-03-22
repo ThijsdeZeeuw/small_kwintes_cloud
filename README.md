@@ -7,19 +7,19 @@
 - CPU with AVX2 support for optimal performance
 
 ## Pre-Installation Setup
+```bash
 
+ssh root@your-vps-ip
+
+```
 ### Update System
 ```bash
-sudo apt update && sudo apt upgrade -y
+sudo apt update && sudo apt install -y nano git docker.io python3 python3-pip
+
 ```
 
 ### Install Required Software
 ```bash
-# Install Python
-sudo apt install -y python3 python3-pip python3-venv
-
-# Install Git
-sudo apt install -y git
 
 # Install Docker
 sudo apt install -y ca-certificates curl gnupg
@@ -38,6 +38,7 @@ sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin d
 # Add current user to docker group
 sudo usermod -aG docker $USER
 newgrp docker
+
 ```
 
 ### Helpful Resources
@@ -48,31 +49,26 @@ newgrp docker
 
 1. **Clone the repository**
    ```bash
-  
+
+   sudo apt install -y ufw
+   sudo ufw enable
+   sudo ufw allow ssh
+   sudo ufw allow 3000  # WebUI
+   sudo ufw allow 5678  # n8n workflow
+   sudo ufw allow 8080 # (if you want to expose SearXNG)
+   sudo ufw allow 11434 # (if you want to expose Ollama)
+   sudo ufw allow 8501  # Archon Streamlit UI (if using Archon)
+   sudo ufw allow 5001  # DocLing Serve (if using DocLing)
+   sudo ufw reload
    ```
 
 2. **Navigate to the project directory**
    ```bash
+   git install https://github.com/ThijsdeZeeuw/small_kwintes_cloud.git
    cd local-ai-packaged
+   nano .env
    ```
-
-3. **Create environment file**
-   ```bash
-   cp .env.example .env
-   ```
-
-4. **Configure firewall (optional but recommended)**
-   ```bash
-   sudo apt install -y ufw
-   sudo ufw allow ssh
-   sudo ufw allow 3000  # WebUI
-   sudo ufw allow 5678  # n8n workflow
-   sudo ufw allow 8501  # Archon Streamlit UI (if using Archon)
-   sudo ufw allow 5001  # DocLing Serve (if using DocLing)
-   sudo ufw enable
-   ```
-
-5. **Start services**
+3. **Start services**
    ```bash
    python3 start_services.py --profile cpu
    ```
@@ -83,7 +79,7 @@ newgrp docker
    python3 start_services.py --profile cuda
    ```
 
-6. **Open n8n workflow**
+4. **Open n8n workflow**
    - Navigate to `http://YOUR_SERVER_IP:5678` in your browser
 
 ## Configuration
@@ -127,6 +123,33 @@ systemctl --user start ollama
 
 4. **Add Tools**
    - Example: Add Wikipedia Tool
+
+## Using Webhooks with Ngrok
+
+To make your n8n webhooks accessible from the internet, we've integrated ngrok:
+
+1. **Setup Ngrok Account**
+   - Get a free account at [https://ngrok.com/](https://ngrok.com/)
+   - Copy your auth token from the dashboard
+
+2. **Configure Environment**
+   - Update the `.env` file with your ngrok auth token:
+     ```
+     NGROK_AUTHTOKEN=your-ngrok-auth-token
+     ```
+
+3. **Start Services with Ngrok**
+   - Run `python3 start_services.py --profile cpu`
+   - The script will automatically configure ngrok and update your webhook URLs
+
+4. **Using the Ngrok URL**
+   - When creating webhooks in n8n, they will automatically use your ngrok URL
+   - If using Telegram or other external services, the webhook URL will be:
+     ```
+     https://xxxx-xxxx-xxxx.ngrok-free.app/webhook/YOUR-WEBHOOK-ID
+     ```
+
+For more details, see the [NGROK_SETUP.md](./NGROK_SETUP.md) file.
 
 ## Integrating DocLing (Optional)
 

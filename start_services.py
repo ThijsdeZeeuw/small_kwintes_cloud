@@ -213,6 +213,17 @@ def check_and_fix_docker_compose_for_searxng():
     except Exception as e:
         print(f"Error checking/modifying docker-compose.yml for SearXNG: {e}")
 
+def update_ngrok_url():
+    """Run the script to update the ngrok URL."""
+    print("Updating ngrok URL...")
+    try:
+        # Make sure the script is executable
+        os.chmod("update_ngrok_url.sh", 0o755)
+        run_command(["./update_ngrok_url.sh"])
+    except Exception as e:
+        print(f"Error updating ngrok URL: {e}")
+        print("You may need to manually run: ./update_ngrok_url.sh")
+
 def main():
     parser = argparse.ArgumentParser(description='Start the local AI and Supabase services.')
     parser.add_argument('--profile', choices=['cpu', 'gpu-nvidia', 'gpu-amd', 'none'], default='cpu',
@@ -237,6 +248,11 @@ def main():
     
     # Then start the local AI services
     start_local_ai(args.profile)
+    
+    # Update ngrok URL after services are started
+    update_ngrok_url()
+    print("All services started successfully. Your n8n instance should now be accessible via ngrok.")
+    print("Check the ngrok URL using 'docker logs ngrok' or in your .env file under NGROK_URL.")
 
 if __name__ == "__main__":
     main()
