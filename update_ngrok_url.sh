@@ -29,8 +29,15 @@ docker exec n8n sh -c "export WEBHOOK_URL=$NGROK_URL"
 # If you have Telegram Bot integration, configure the webhook
 if [ ! -z "$TELEGRAM_BOT_TOKEN" ]; then
   echo "Setting up Telegram webhook..."
+  # Webhook for regular bot commands
   curl -s "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/setWebhook?url=$NGROK_URL/webhook-telegram"
-  echo "Telegram webhook set to $NGROK_URL/webhook-telegram"
+  echo "Telegram command webhook set to $NGROK_URL/webhook-telegram"
+  
+  # Webhook for Telegram login authentication
+  curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/setWebhook" \
+    -H "Content-Type: application/json" \
+    -d "{\"url\": \"$NGROK_URL/webhook/telegram-auth\", \"drop_pending_updates\": true}"
+  echo "Telegram auth webhook set to $NGROK_URL/webhook/telegram-auth"
 fi
 
 echo "Ngrok URL updated successfully. Your n8n instance is now accessible via: $NGROK_URL"

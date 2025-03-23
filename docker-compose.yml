@@ -22,6 +22,8 @@ x-n8n: &service-n8n
     - N8N_USER_MANAGEMENT_JWT_SECRET
     - WEBHOOK_TUNNEL_URL=${NGROK_URL}
     - WEBHOOK_URL=${NGROK_URL}
+    - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+    - TELEGRAM_BOT_USERNAME=${TELEGRAM_BOT_USERNAME}
     
 
 x-ollama: &service-ollama
@@ -48,6 +50,17 @@ x-init-ollama: &init-ollama
     # Change the name of the LLM and num_ctx as you see fit.
 
 services:
+  login-server:
+    image: nginx:alpine
+    container_name: telegram-login
+    restart: unless-stopped
+    volumes:
+      - ./telegram_login.html:/usr/share/nginx/html/index.html:ro
+    environment:
+      - TELEGRAM_BOT_USERNAME=${TELEGRAM_BOT_USERNAME}
+    depends_on:
+      - n8n
+
   ngrok:
     image: ngrok/ngrok:latest
     container_name: ngrok
@@ -126,6 +139,7 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy-data:/data:rw
       - caddy-config:/config:rw
+      - ./telegram_login.html:/var/www/html/index.html:ro
     environment:
       - N8N_HOSTNAME=${N8N_HOSTNAME:-":8001"}
       - WEBUI_HOSTNAME=${WEBUI_HOSTNAME:-":8002"}
@@ -133,6 +147,7 @@ services:
       - OLLAMA_HOSTNAME=${OLLAMA_HOSTNAME:-":8004"}
       - SUPABASE_HOSTNAME=${SUPABASE_HOSTNAME:-":8005"}
       - SEARXNG_HOSTNAME=${SEARXNG_HOSTNAME:-":8006"}
+      - LOGIN_HOSTNAME=${LOGIN_HOSTNAME:-":8007"}
       - LETSENCRYPT_EMAIL=${LETSENCRYPT_EMAIL:-internal}
     cap_drop:
       - ALL

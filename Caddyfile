@@ -30,6 +30,30 @@
     reverse_proxy localhost:8000
 }
 
+# Telegram Login Page
+{$LOGIN_HOSTNAME} {
+    # Serve the static HTML page for Telegram login
+    root * /var/www/html
+    file_server
+    encode zstd gzip
+
+    # Set appropriate security headers
+    header {
+        # CSP with Telegram widget allowed
+        Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://telegram.org; style-src 'self' 'unsafe-inline'; img-src 'self' https://telegram.org https://*.telegram.org data:; connect-src 'self' https://*.telegram.org; frame-src 'self' https://telegram.org;"
+        # Disable some browser features
+        Permissions-Policy "accelerometer=(),camera=(),geolocation=(),gyroscope=(),magnetometer=(),microphone=(),payment=(),usb=()"
+        # Set referrer policy
+        Referrer-Policy "no-referrer-when-downgrade"
+        # Force clients to use HTTPS
+        Strict-Transport-Security "max-age=31536000"
+        # Prevent MIME type sniffing
+        X-Content-Type-Options "nosniff"
+        # Remove "Server" header
+        -Server
+    }
+}
+
 # SearXNG
 {$SEARXNG_HOSTNAME} {
     encode zstd gzip

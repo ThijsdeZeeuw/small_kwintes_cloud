@@ -1,0 +1,195 @@
+{
+    "name": "Telegram Auth Handler",
+    "nodes": [{
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "webhook/telegram-auth",
+                "options": {}
+            },
+            "name": "Webhook",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                250,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "keepOnlySet": true,
+                "values": {
+                    "string": [{
+                            "name": "userId",
+                            "value": "={{ $json.body.id }}"
+                        },
+                        {
+                            "name": "firstName",
+                            "value": "={{ $json.body.first_name }}"
+                        },
+                        {
+                            "name": "lastName",
+                            "value": "={{ $json.body.last_name || \"\" }}"
+                        },
+                        {
+                            "name": "username",
+                            "value": "={{ $json.body.username || \"\" }}"
+                        },
+                        {
+                            "name": "photoUrl",
+                            "value": "={{ $json.body.photo_url || \"\" }}"
+                        },
+                        {
+                            "name": "authDate",
+                            "value": "={{ $json.body.auth_date }}"
+                        },
+                        {
+                            "name": "hash",
+                            "value": "={{ $json.body.hash }}"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "name": "Process Auth Data",
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 1,
+            "position": [
+                460,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "boolean": [{
+                        "value1": "={{ $node[\"Verify Telegram Auth\"].json.isValid }}",
+                        "value2": true
+                    }]
+                }
+            },
+            "name": "Is Valid?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 1,
+            "position": [
+                900,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "functionCode": "// This is a simplified example - in production, use a proper crypto verification\nconst BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || 'YOUR_BOT_TOKEN';\n\nconst crypto = require('crypto');\n\n// Extract the auth data\nconst { hash, ...data } = $input.item;\n\n// Create the secret key by SHA-256 of the bot token\nconst secretKey = crypto.createHash('sha256')\n  .update(BOT_TOKEN)\n  .digest();\n\n// Create the data check string\nconst dataCheckString = Object.keys(data)\n  .sort()\n  .map(k => `${k}=${data[k]}`)\n  .join('\\n');\n\n// Create the HMAC-SHA-256 hash of the data check string\nconst hmac = crypto.createHmac('sha256', secretKey)\n  .update(dataCheckString)\n  .digest('hex');\n\n// Compare with the received hash\nconst isValid = hmac === hash;\n\n// Return the validation result and user data\nreturn {\n  isValid,\n  userData: {\n    id: data.userId,\n    firstName: data.firstName,\n    lastName: data.lastName,\n    username: data.username,\n    photoUrl: data.photoUrl,\n    authDate: new Date(data.authDate * 1000).toISOString()\n  }\n};"
+            },
+            "name": "Verify Telegram Auth",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 1,
+            "position": [
+                680,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "upsert",
+                "schema": "public",
+                "table": "users",
+                "columns": "id, first_name, last_name, username, photo_url, last_login, auth_source",
+                "additionalFields": {}
+            },
+            "name": "Insert/Update User",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 1,
+            "position": [
+                1100,
+                200
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "1",
+                    "name": "Postgres Supabase"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ {success: true, user: $node[\"Verify Telegram Auth\"].json.userData} }}",
+                "options": {}
+            },
+            "name": "Success Response",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                1320,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ {success: false, error: \"Invalid authentication data\"} }}",
+                "options": {
+                    "responseCode": 401
+                }
+            },
+            "name": "Error Response",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                1100,
+                400
+            ]
+        }
+    ],
+    "connections": {
+        "Webhook": {
+            "main": [
+                [{
+                    "node": "Process Auth Data",
+                    "type": "main",
+                    "index": 0
+                }]
+            ]
+        },
+        "Process Auth Data": {
+            "main": [
+                [{
+                    "node": "Verify Telegram Auth",
+                    "type": "main",
+                    "index": 0
+                }]
+            ]
+        },
+        "Is Valid?": {
+            "main": [
+                [{
+                    "node": "Insert/Update User",
+                    "type": "main",
+                    "index": 0
+                }],
+                [{
+                    "node": "Error Response",
+                    "type": "main",
+                    "index": 0
+                }]
+            ]
+        },
+        "Verify Telegram Auth": {
+            "main": [
+                [{
+                    "node": "Is Valid?",
+                    "type": "main",
+                    "index": 0
+                }]
+            ]
+        },
+        "Insert/Update User": {
+            "main": [
+                [{
+                    "node": "Success Response",
+                    "type": "main",
+                    "index": 0
+                }]
+            ]
+        }
+    }
+}

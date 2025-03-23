@@ -39,6 +39,18 @@ sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin d
 sudo usermod -aG docker $USER
 newgrp docker
 
+# Start and enable Docker service
+sudo systemctl start docker
+sudo systemctl enable docker
+sudo systemctl status docker
+
+# If you see permission issues, you can try:
+sudo chmod 666 /var/run/docker.sock
+
+# Verify Docker is working
+docker --version
+docker ps
+
 ```
 
 ### Helpful Resources
@@ -51,21 +63,23 @@ newgrp docker
    ```bash
 
    sudo apt install -y ufw
-   sudo ufw enable
-   sudo ufw allow ssh
-   sudo ufw allow 3000  # WebUI
-   sudo ufw allow 5678  # n8n workflow
-   sudo ufw allow 8080 # (if you want to expose SearXNG)
-   sudo ufw allow 11434 # (if you want to expose Ollama)
-   sudo ufw allow 8501  # Archon Streamlit UI (if using Archon)
-   sudo ufw allow 5001  # DocLing Serve (if using DocLing)
-   sudo ufw reload
+   ufw enable
+   ufw allow ssh
+   ufw allow 80
+   ufw allow 443
+   ufw allow 3000  # WebUI
+   ufw allow 5678  # n8n workflow
+   ufw allow 8080 # (if you want to expose SearXNG)
+   ufw allow 11434 # (if you want to expose Ollama)
+   ufw allow 8501  # Archon Streamlit UI (if using Archon)
+   ufw allow 5001  # DocLing Serve (if using DocLing)
+   ufw reload
    ```
 
 2. **Navigate to the project directory**
    ```bash
-   git install https://github.com/ThijsdeZeeuw/small_kwintes_cloud.git
-   cd local-ai-packaged
+   git clone https://github.com/ThijsdeZeeuw/small_kwintes_cloud.git
+   cd small_kwintes_cloud
    nano .env
    ```
 3. **Start services**
@@ -81,6 +95,7 @@ newgrp docker
 
 4. **Open n8n workflow**
    - Navigate to `http://YOUR_SERVER_IP:5678` in your browser
+   - `http://46.202.155.155/:5678`
 
 ## Configuration
 
@@ -115,7 +130,7 @@ systemctl --user start ollama
    - Go to Admin Settings -> Workspace -> Functions -> Add Function
    - Give it a name and description
    - URL: `http://YOUR_SERVER_IP:3000/admin/functions`
-
+   - `http://46.202.155.155:3000/admin/functions`
 3. **Add n8n_pip Code**
    - Copy code from [https://openwebui.com/f/coleam/n8n_pipe](https://openwebui.com/f/coleam/n8n_pipe)
    - Change the webhook URL to: `http://host.docker.internal:5678/webhook/invoke_n8n_agent`
@@ -150,6 +165,35 @@ To make your n8n webhooks accessible from the internet, we've integrated ngrok:
      ```
 
 For more details, see the [NGROK_SETUP.md](./NGROK_SETUP.md) file.
+
+## Telegram Login Integration
+
+Kwintes Cloud includes a Telegram login system for easy and secure authentication:
+
+1. **Setup Telegram Bot**
+   - Create a bot via BotFather on Telegram
+   - Get your bot token and set in the `.env` file:
+     ```
+     TELEGRAM_BOT_TOKEN=your-telegram-bot-token
+     TELEGRAM_BOT_USERNAME=Kwintes_cloud
+     ```
+   - Configure your domain in BotFather under Login Widget settings
+
+2. **Access Login Page**
+   - Navigate to `https://login.kwintes.cloud` or your configured LOGIN_HOSTNAME
+   - The login page uses Telegram's secure widget for authentication
+
+3. **Technical Integration**
+   - Frontend: HTML page with Telegram widget
+   - Backend: n8n workflow for authentication processing
+   - Database: Users stored in Supabase (PostgreSQL)
+
+4. **Security Features**
+   - HMAC-SHA256 signature verification
+   - Row-level security in the database
+   - Secure token handling
+
+For detailed setup instructions, see [TELEGRAM_LOGIN.md](./TELEGRAM_LOGIN.md) and [README_TELEGRAM_INTEGRATION.md](./README_TELEGRAM_INTEGRATION.md).
 
 ## Integrating DocLing (Optional)
 
@@ -420,3 +464,32 @@ python3 start_services.py --profile <your-profile>
 - Visit the [Community Forum](https://thinktank.ottomator.ai/c/local-ai/18)
 - Check service logs: `docker compose -p localai logs`
 - Check system resources: `htop` (install with `sudo apt install htop` if needed) 
+
+### Common Issues
+
+#### Docker Daemon Not Running
+
+If you see an error like:
+```
+Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?
+```
+
+Fix it with these commands:
+```bash
+# Start the Docker service
+sudo systemctl start docker
+
+# Check if it's running
+sudo systemctl status docker
+
+# Enable it to start automatically on boot
+sudo systemctl enable docker
+
+# If you have permission issues
+sudo chmod 666 /var/run/docker.sock
+```
+
+Then try running the start script again:
+```bash
+python3 start_services.py --profile cpu
+``` 
