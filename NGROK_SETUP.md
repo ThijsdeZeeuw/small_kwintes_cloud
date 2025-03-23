@@ -46,7 +46,7 @@ After starting, you can check the ngrok status:
 ```bash
 docker logs ngrok
 ```
-
+```bash
 The URL should be automatically updated in your `.env` file and applied to the n8n container.
 
 ### 5. Set Up Telegram Webhook (Optional)
@@ -54,10 +54,10 @@ The URL should be automatically updated in your `.env` file and applied to the n
 If you're using a Telegram bot with n8n:
 
 1. Add your Telegram bot token to the `.env` file:
-   ```
+   `
    TELEGRAM_BOT_TOKEN=your-telegram-bot-token
-   ```
-
+   `
+```
 2. Run the update script to configure the webhook:
    ```bash
    ./update_ngrok_url.sh
